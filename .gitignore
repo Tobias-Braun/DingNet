@@ -184,7 +184,7 @@ cmake-build-*/
 *.iws
 
 # IntelliJ
-out/
+out
 *.class
 .idea
 
