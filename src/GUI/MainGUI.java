@@ -11,6 +11,7 @@ import SelfAdaptation.FeedbackLoop.ReliableEfficientDistanceGateway;
 import SelfAdaptation.FeedbackLoop.SignalBasedAdaptation;
 import SelfAdaptation.Instrumentation.MoteEffector;
 import SelfAdaptation.Instrumentation.MoteProbe;
+import SelfAdaptation.machine_learning.QLearningAdaption;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
 import org.jfree.chart.JFreeChart;
@@ -159,6 +160,8 @@ public class MainGUI extends JFrame {
 
             }
         };
+        GenericFeedbackLoop qLearningAdaption = new QLearningAdaption();
+        algorithms.add(qLearningAdaption);
         algorithms.add(noAdaptation);
 
         SignalBasedAdaptation signalBasedAdaptation = new SignalBasedAdaptation(QoS);
