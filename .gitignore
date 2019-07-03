@@ -305,3 +305,4 @@ gradle-app.setting
 **/build/
 
 # End of https://www.gitignore.io/api/gradle,images,windows,eclipse,intellij,intellij+all,intellij+iml
+**/.DS_Store

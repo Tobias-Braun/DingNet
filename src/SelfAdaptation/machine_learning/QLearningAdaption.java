@@ -31,6 +31,10 @@ public class QLearningAdaption extends GenericFeedbackLoop {
         this.rand = new Random();
     }
 
+    public float getEpsilon() {
+        return 1 / (this.q_table.size()/160f + 1f);
+    }
+
     @Override
     public String toString() {
         return "QLearningAdaption, filled with " + this.q_table.size() + " items";
@@ -59,7 +63,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     private Action chooseNextAction(State currentState) {
-        if (rand.nextFloat() >= epsilon) {
+        if (rand.nextFloat() >= getEpsilon()) {
             return chooseBestAction(currentState);
         } else {
             return chooseRandomAction();

@@ -2,6 +2,7 @@ package IotDomain;
 
 import GUI.MainGUI;
 import SelfAdaptation.FeedbackLoop.GenericFeedbackLoop;
+import SelfAdaptation.machine_learning.QLearningAdaption;
 import be.kuleuven.cs.som.annotate.Basic;
 
 import java.time.LocalTime;
@@ -133,9 +134,8 @@ public class Simulation implements Runnable {
             for(Mote mote : getEnvironment().getMotes()){
                 if(mote.isEnabled()) {
                     if (Integer.signum(mote.getPath().size() - waypoinMap.get(mote)) > 0) {
-
                         if (1 / mote.getMovementSpeed() * 1000 < (getEnvironment().getTime().toNanoOfDay() - timemap.get(mote).toNanoOfDay()) / 100000 &&
-                                Long.signum(getEnvironment().getTime().toNanoOfDay() / 100000 - Math.abs(mote.getStartOffset()) * 100000) > 0) {
+                                -                                Long.signum(getEnvironment().getTime().toNanoOfDay() / 100000 - Math.abs(mote.getStartOffset()) * 100000) > 0) {
                             timemap.put(mote, getEnvironment().getTime());
                             if (Integer.signum(mote.getXPos() - getEnvironment().toMapXCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0 ||
                                     Integer.signum(mote.getYPos() - getEnvironment().toMapYCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0) {
@@ -212,7 +212,6 @@ public class Simulation implements Runnable {
     public void run(){
 
         getEnvironment().reset();
-
         calculateIfMotesAreActiveBasedOnInputProfile();
 
 
@@ -221,7 +220,12 @@ public class Simulation implements Runnable {
             gui.setProgress(i,getInputProfile().getNumberOfRuns());
             if(i != 0)
                 getEnvironment().addRun();
+            GenericFeedbackLoop approach = getApproach();
 
+            if (approach instanceof QLearningAdaption) {
+                QLearningAdaption qlearning = (QLearningAdaption) approach;
+                qlearning.print_q_table();
+            }
             Boolean arrived = true;
             HashMap<Mote, Integer> waypoinMap = new HashMap<>();
             HashMap<Mote, LocalTime> timemap = new HashMap<>();
@@ -233,24 +237,27 @@ public class Simulation implements Runnable {
                 for (Mote mote : getEnvironment().getMotes()) {
                     if(mote.isEnabled()) {
                         if (Integer.signum(mote.getPath().size() - waypoinMap.get(mote)) > 0) {
-
-                            if (1 / mote.getMovementSpeed() * 1000 < (getEnvironment().getTime().toNanoOfDay() - timemap.get(mote).toNanoOfDay()) / 100000 &&
-                                    Long.signum(getEnvironment().getTime().toNanoOfDay() / 100000 - Math.abs(mote.getStartOffset()) * 100000) > 0) {
-                                timemap.put(mote, getEnvironment().getTime());
-                                if (Integer.signum(mote.getXPos() - getEnvironment().toMapXCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0 ||
-                                        Integer.signum(mote.getYPos() - getEnvironment().toMapYCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0) {
-                                    getEnvironment().moveMote(mote, mote.getPath().get(waypoinMap.get(mote)));
-                                    if (mote.shouldSend()) {
-                                        LinkedList<Byte> data = new LinkedList<>();
-                                        for (MoteSensor sensor : mote.getSensors()) {
-                                            data.add(sensor.getValue(mote.getXPos(), mote.getYPos(), getEnvironment().getTime()));
+                            long envTimeOfDay = getEnvironment().getTime().toNanoOfDay();
+                            long timeMapTime = timemap.get(mote).toNanoOfDay();
+                            long difference = envTimeOfDay - timeMapTime;
+                            long correctedDiff = difference / 100000;
+                            if (1 / mote.getMovementSpeed() * 1000 < correctedDiff)
+                                if (Long.signum(getEnvironment().getTime().toNanoOfDay() / 100000 - Math.abs(mote.getStartOffset()) * 100000) > 0) {
+                                    timemap.put(mote, getEnvironment().getTime());
+                                    if (Integer.signum(mote.getXPos() - getEnvironment().toMapXCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0 ||
+                                            Integer.signum(mote.getYPos() - getEnvironment().toMapYCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0) {
+                                        getEnvironment().moveMote(mote, mote.getPath().get(waypoinMap.get(mote)));
+                                        if (mote.shouldSend()) {
+                                            LinkedList<Byte> data = new LinkedList<>();
+                                            for (MoteSensor sensor : mote.getSensors()) {
+                                                data.add(sensor.getValue(mote.getXPos(), mote.getYPos(), getEnvironment().getTime()));
+                                            }
+                                            Byte[] dataByte = new Byte[data.toArray().length];
+                                            data.toArray(dataByte);
+                                            mote.sendToGateWay(dataByte, new HashMap<>());
                                         }
-                                        Byte[] dataByte = new Byte[data.toArray().length];
-                                        data.toArray(dataByte);
-                                        mote.sendToGateWay(dataByte, new HashMap<>());
-                                    }
-                                } else waypoinMap.put(mote, waypoinMap.get(mote) + 1);
-                            }
+                                    } else waypoinMap.put(mote, waypoinMap.get(mote) + 1);
+                                }
                         }
                     }
 
