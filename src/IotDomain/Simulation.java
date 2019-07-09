@@ -2,9 +2,16 @@ package IotDomain;
 
 import GUI.MainGUI;
 import SelfAdaptation.FeedbackLoop.GenericFeedbackLoop;
+import SelfAdaptation.machine_learning.Action;
 import SelfAdaptation.machine_learning.QLearningAdaption;
+import SelfAdaptation.machine_learning.State;
 import be.kuleuven.cs.som.annotate.Basic;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -213,19 +220,34 @@ public class Simulation implements Runnable {
 
         getEnvironment().reset();
         calculateIfMotesAreActiveBasedOnInputProfile();
+        this.approach = getApproach();
 
-
+                if (this.approach instanceof QLearningAdaption) {
+                    QLearningAdaption qlearning = (QLearningAdaption) this.approach;
+                    qlearning.resetReward();
+                    System.out.println("reading save file ... ");
+                    try {
+                        BufferedReader reader = new BufferedReader(new FileReader("hashtable.txt"));
+                        String line = reader.readLine();
+                        while (line != null) {
+                            String[] data = line.split(",");
+                            addDataLineToLearningAlgorithm(data, qlearning);
+                            line = reader.readLine();
+                        }
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+        System.out.println("done reading!");
         for(int i =0; i< getInputProfile().getNumberOfRuns();i++) {
-
             gui.setProgress(i,getInputProfile().getNumberOfRuns());
-            if(i != 0)
+            if(i != 0) {
                 getEnvironment().addRun();
-            GenericFeedbackLoop approach = getApproach();
-
-            if (approach instanceof QLearningAdaption) {
-                QLearningAdaption qlearning = (QLearningAdaption) approach;
-                qlearning.print_q_table();
+                this.approach.incrementCurrentRun();
             }
+            GenericFeedbackLoop approach = getApproach();
             Boolean arrived = true;
             HashMap<Mote, Integer> waypoinMap = new HashMap<>();
             HashMap<Mote, LocalTime> timemap = new HashMap<>();
@@ -284,7 +306,39 @@ public class Simulation implements Runnable {
                 mote.setYPos(location.getRight());
             }
         }
+        try {
+            FileWriter fileWriter = new FileWriter("hashtable.txt");
+            if (approach instanceof QLearningAdaption) {
+                QLearningAdaption qLearning = (QLearningAdaption) approach;
+                qLearning.getQTable().forEach((p, v) -> {
+                    try {
+                        fileWriter.write(String.valueOf(p.getLeft().getPosX()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(p.getLeft().getPosY()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(p.getRight().getSampling_rate()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(p.getRight().getSpreading_factor()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(p.getRight().getTransmission_power()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(v));
+                        fileWriter.write(System.lineSeparator());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+                fileWriter.flush();
+                System.out.println("approach received " + qLearning.getCompleteReward() + " reward");
+            }
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addDataLineToLearningAlgorithm(String[] data, QLearningAdaption qlearning) {
+        qlearning.getQTable().put(new Pair<>(new State(Integer.parseInt(data[0]), Integer.parseInt(data[1])), new Action(Integer.parseInt(data[2]), Integer.parseInt(data[3]), Integer.parseInt(data[4]))), Float.parseFloat(data[5]));
     }
 
     /**

@@ -23,6 +23,8 @@ public abstract class GenericFeedbackLoop {
      */
     private MoteProbe moteProbe;
 
+    private int currentRun;
+
     /**
      * The mote effector used by the feedback loop.
      */
@@ -46,6 +48,8 @@ public abstract class GenericFeedbackLoop {
         this.active = true;
     }
 
+    public void incrementCurrentRun() { this.currentRun += 1;}
+
     /**
      * A method to deactivate the feedback loop.
      */
@@ -68,6 +72,7 @@ public abstract class GenericFeedbackLoop {
     public GenericFeedbackLoop(String name){
         this.name =name;
         this.active = false;
+        this.currentRun = 0;
     }
 
     /**

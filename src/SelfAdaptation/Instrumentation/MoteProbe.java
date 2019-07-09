@@ -4,6 +4,7 @@ import IotDomain.*;
 import SelfAdaptation.FeedbackLoop.GenericFeedbackLoop;
 
 import java.util.LinkedList;
+import java.util.stream.Collectors;
 
 /**
  * A class representing methods for probing.
@@ -35,6 +36,11 @@ public class MoteProbe {
      */
     public void setGenericFeedbackLoop(GenericFeedbackLoop genericFeedbackLoop){
         this.genericFeedbackLoop =genericFeedbackLoop;
+    }
+
+    public LoraTransmission getLastReceivedSignal(Mote mote, Gateway gateway) {
+        return gateway.getReceivedTransmissions(mote.getEnvironment().getNumberOfRuns()-1)
+                .getLast();
     }
 
     /**

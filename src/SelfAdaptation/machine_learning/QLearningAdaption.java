@@ -1,6 +1,7 @@
 package SelfAdaptation.machine_learning;
 
 import IotDomain.Gateway;
+import IotDomain.LoraTransmission;
 import IotDomain.Mote;
 import IotDomain.Pair;
 import SelfAdaptation.FeedbackLoop.GenericFeedbackLoop;
@@ -18,12 +19,11 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     private static final float alpha = 0.5f;
     private static final float gamma = 0.95f;
     private static final float epsilon = 0.15f;
-    private int lastEnergyLevel;
     private final Random rand;
+    private float complete_reward = 0;
 
     public QLearningAdaption() {
         super("Q-learning-Adaption");
-        this.lastEnergyLevel = 0;
         this.q_table = new HashMap<>();
         this.state_list = new ArrayList<>();
         this.lastStateActionPair = new Pair<>(new State(0,0), new Action(5, 5, 15));
@@ -32,7 +32,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     public float getEpsilon() {
-        return 1 / (this.q_table.size()/160f + 1f);
+        return 1 / (this.q_table.size()/100f + 1f);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     @Override
     public void adapt(Mote mote, Gateway dataGateway) {
         System.out.println("Table size: " + this.q_table.size());
-        State currentState = new State(mote.getXPos() - mote.getXPos() % 4, mote.getYPos() - mote.getYPos() % 4);
+        State currentState = new State(mote.getXPos() - mote.getXPos() % 8, mote.getYPos() - mote.getYPos() % 8);
         boolean noneMatch = this.state_list.stream().noneMatch((state -> state.equals(currentState)));
         if (noneMatch) this.state_list.add(currentState);
         float reward = calculateReward(mote, dataGateway);
@@ -54,6 +54,10 @@ public class QLearningAdaption extends GenericFeedbackLoop {
         getMoteEffector().setPower(mote, nextAction.getTransmission_power());
         getMoteEffector().setSpreadingFactor(mote, nextAction.getSpreading_factor());
         getMoteEffector().setSamplingRate(mote, nextAction.getSampling_rate());
+    }
+
+    public HashMap<Pair<State, Action>, Float> getQTable() {
+        return this.q_table;
     }
 
     public void print_q_table() {
@@ -72,8 +76,8 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
     private Action chooseRandomAction() {
         final int transmission_power = rand.nextInt(15) + 1;
-        final int spreading_factor = rand.nextInt(12) + 1;
-        final int sampling_rate = rand.nextInt(10) + 15;
+        final int spreading_factor = 12;//rand.nextInt(6) + 7; // 7 - 12
+        final int sampling_rate = 15;//rand.nextInt(10) + 15;
         return new Action(transmission_power, spreading_factor, sampling_rate);
     }
 
@@ -86,14 +90,19 @@ public class QLearningAdaption extends GenericFeedbackLoop {
         Optional<Pair<State, Action>> actionOptional = q_table.keySet()
                 .stream()
                 .filter(actionState -> actionState.getLeft().equals(currentState))
-                .min((o1, o2) -> (int) (q_table.get(o1) * 1000 - q_table.get(o2) * 1000));
+                .max((o1, o2) -> (int) (q_table.get(o1) - q_table.get(o2)));
         return actionOptional.get().getRight();
     }
 
     private float calculateReward(Mote mote, Gateway gateway) {
-        int energy_diff = lastEnergyLevel - mote.getEnergyLevel();
-        double reward = getMoteProbe().getHighestReceivedSignal(mote) / (energy_diff + 1); // +1 to ensure non-zero divident
+        LoraTransmission lastTransmission = getMoteProbe().getLastReceivedSignal(mote, gateway);
+        double reward = 1 - used_energy(lastTransmission); // +1 to ensure non-zero divident
+        this.complete_reward += (float) reward;
         return (float) reward;
+    }
+
+    private static double used_energy(LoraTransmission transmission) {
+        return Math.pow(10,((double)transmission.getTransmissionPower()/10)*transmission.getTimeOnAir()/1000);
     }
 
     private void updateQTable(Pair<State, Action> stateActionPair, float reward) {
@@ -103,5 +112,13 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
     private void assignNewStateActionValue(Pair<State, Action> nextStateActionPair, float reward) {
         q_table.put(lastStateActionPair, q_table.get(lastStateActionPair) + alpha * (reward + gamma * q_table.get(nextStateActionPair) - q_table.get(lastStateActionPair)));
+    }
+
+    public float getCompleteReward() {
+        return this.complete_reward;
+    }
+
+    public void resetReward() {
+        this.complete_reward = 0;
     }
 }

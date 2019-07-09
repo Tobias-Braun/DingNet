@@ -86,8 +86,8 @@ public abstract class NetworkEntity implements Serializable{
      * @Post    If the y-coordinate was not valid, it is set to 0.
      * @Post    If the transmission power was valid, it is set.
      * @Post    If the transmission power was not valid, it is set to 0.
-     *
      */
+
     @Raw
     public NetworkEntity(Long EUI, Integer xPos, Integer yPos, Environment environment, Integer transmissionPower, Integer SF,
                          Double transmissionPowerThreshold){
