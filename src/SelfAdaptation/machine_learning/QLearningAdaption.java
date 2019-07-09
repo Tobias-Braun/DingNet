@@ -32,7 +32,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     public float getEpsilon() {
-        return 1 / (this.q_table.size()/100f + 1f);
+        return 1 / (this.q_table.size()/500f + 1f);
     }
 
     @Override
@@ -43,7 +43,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     @Override
     public void adapt(Mote mote, Gateway dataGateway) {
         System.out.println("Table size: " + this.q_table.size());
-        State currentState = new State(mote.getXPos() - mote.getXPos() % 8, mote.getYPos() - mote.getYPos() % 8);
+        State currentState = new State(mote.getXPos() - mote.getXPos() % 4, mote.getYPos() - mote.getYPos() % 4);
         boolean noneMatch = this.state_list.stream().noneMatch((state -> state.equals(currentState)));
         if (noneMatch) this.state_list.add(currentState);
         float reward = calculateReward(mote, dataGateway);
@@ -96,7 +96,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
     private float calculateReward(Mote mote, Gateway gateway) {
         LoraTransmission lastTransmission = getMoteProbe().getLastReceivedSignal(mote, gateway);
-        double reward = 1 - used_energy(lastTransmission); // +1 to ensure non-zero divident
+        double reward = 0.5 - used_energy(lastTransmission); // +1 to ensure non-zero divident
         this.complete_reward += (float) reward;
         return (float) reward;
     }
