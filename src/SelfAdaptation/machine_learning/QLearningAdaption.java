@@ -17,7 +17,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     private final HashMap<Pair<State, Action>, Float> q_table ;
     private final ArrayList<State> state_list;
     private static final float alpha = 0.5f;
-    private static final float gamma = 0.95f;
+    private static final float gamma = 0.1f;
     private static final float epsilon = 0.15f;
     private final Random rand;
     private float complete_reward = 0;
