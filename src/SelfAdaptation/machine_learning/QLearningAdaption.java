@@ -96,7 +96,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
     private float calculateReward(Mote mote, Gateway gateway) {
         LoraTransmission lastTransmission = getMoteProbe().getLastReceivedSignal(mote, gateway);
-        double reward = 0.5 - used_energy(lastTransmission); // +1 to ensure non-zero divident
+        double reward = 0.2 - used_energy(lastTransmission); // +1 to ensure non-zero divident
         this.complete_reward += (float) reward;
         return (float) reward;
     }
