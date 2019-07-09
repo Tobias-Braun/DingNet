@@ -17,7 +17,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     private final HashMap<Pair<State, Action>, Float> q_table ;
     private final ArrayList<State> state_list;
     private static final float alpha = 0.5f;
-    private static final float gamma = 0.1f;
+    private static final float gamma = 0f;
     private static final float epsilon = 0.15f;
     private final Random rand;
     private float complete_reward = 0;
@@ -32,7 +32,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     public float getEpsilon() {
-        return 1 / (this.q_table.size()/300f + 1f);
+        return 1 / (this.q_table.size()/350f + 1f);
     }
 
     @Override
@@ -75,7 +75,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     private Action chooseRandomAction() {
-        final int transmission_power = 10;//rand.nextInt(15) + 1;
+        final int transmission_power = rand.nextInt(15) + 1;
         final int spreading_factor = rand.nextInt(6) + 7; // 7 - 12
         final int sampling_rate = 15;//rand.nextInt(10) + 15;
         return new Action(transmission_power, spreading_factor, sampling_rate);
