@@ -32,7 +32,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     public float getEpsilon() {
-        return 1 / (this.q_table.size()/500f + 1f);
+        return 1 / (this.q_table.size()/300f + 1f);
     }
 
     @Override
@@ -75,8 +75,8 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     private Action chooseRandomAction() {
-        final int transmission_power = rand.nextInt(15) + 1;
-        final int spreading_factor = 12;//rand.nextInt(6) + 7; // 7 - 12
+        final int transmission_power = 10;//rand.nextInt(15) + 1;
+        final int spreading_factor = rand.nextInt(6) + 7; // 7 - 12
         final int sampling_rate = 15;//rand.nextInt(10) + 15;
         return new Action(transmission_power, spreading_factor, sampling_rate);
     }
