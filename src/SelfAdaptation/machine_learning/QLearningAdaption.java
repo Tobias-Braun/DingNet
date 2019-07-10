@@ -17,7 +17,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     private final HashMap<Pair<State, Action>, Float> q_table ;
     private final ArrayList<State> state_list;
     private static final float alpha = 0.5f;
-    private static final float gamma = 0f;
+    private static final float gamma = 0.1f;
     private static final float epsilon = 0.15f;
     private final Random rand;
     private float complete_reward = 0;
@@ -96,7 +96,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
     private float calculateReward(Mote mote, Gateway gateway) {
         LoraTransmission lastTransmission = getMoteProbe().getLastReceivedSignal(mote, gateway);
-        double reward = 0.2 - used_energy(lastTransmission); // +1 to ensure non-zero divident
+        double reward = -used_energy(lastTransmission); // +1 to ensure non-zero divident
         this.complete_reward += (float) reward;
         return (float) reward;
     }
@@ -111,7 +111,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     private void assignNewStateActionValue(Pair<State, Action> nextStateActionPair, float reward) {
-        q_table.put(lastStateActionPair, q_table.get(lastStateActionPair) + alpha * (reward + gamma * q_table.get(nextStateActionPair) - q_table.get(lastStateActionPair)));
+        q_table.put(lastStateActionPair, q_table.get(lastStateActionPair) + alpha * (reward + gamma * (q_table.get(nextStateActionPair) - q_table.get(lastStateActionPair))));
     }
 
     public float getCompleteReward() {
