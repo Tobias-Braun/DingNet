@@ -21,6 +21,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.*;
 import java.util.List;
+import IotDomain.Characteristic;
 
 public class MapView {
     public static void main(String[] args)
