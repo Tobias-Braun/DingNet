@@ -28,6 +28,8 @@ public abstract class GenericFeedbackLoop {
      */
     private MoteEffector moteEffector;
 
+    private int currentRun;
+
     /**
      * A boolean to know if the feedback loop is active
      */
@@ -68,6 +70,7 @@ public abstract class GenericFeedbackLoop {
     public GenericFeedbackLoop(String name){
         this.name =name;
         this.active = false;
+        this.currentRun = 0;
     }
 
     /**
@@ -111,6 +114,10 @@ public abstract class GenericFeedbackLoop {
     public void setMoteProbe(MoteProbe moteProbe) {
         this.moteProbe = moteProbe;
         getMoteProbe().setGenericFeedbackLoop(this);
+    }
+
+    public void incrementCurrentRun() {
+        this.currentRun += 1;
     }
 
     /**

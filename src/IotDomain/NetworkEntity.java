@@ -1,11 +1,13 @@
 package IotDomain;
 
+import SelfAdaptation.Instrumentation.MoteProbe;
 import be.kuleuven.cs.som.annotate.*;
 
 
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -198,6 +200,10 @@ public abstract class NetworkEntity implements Serializable{
         this.transmissionPower = transmissionPower;
     }
 
+
+    public LinkedList<LinkedHashMap<LoraTransmission, Boolean>> getReceivedTransmissions() {
+        return this.receivedTransmissions;
+    }
     /**
      *  Returns The transmission power of the entity.
      * @return The transmission power of the entity.
@@ -227,9 +233,21 @@ public abstract class NetworkEntity implements Serializable{
                 handleMacCommands(transmission.getContent());
                 OnReceive(transmission.getContent().getPayload(), transmission.getContent().getSenderEUI(), transmission.getContent().getDesignatedReceiverEUI());
 
+            } else {
+                if (this instanceof Gateway) {
+                    Gateway tis = (Gateway) this;
+                    for (MoteProbe moteProbe : tis.getSubscribedMoteProbes()) {
+                        moteProbe.trigger(tis, transmission.getContent().getSenderEUI());
+                    }
+                }
             }
         }
-
+        if (this instanceof Gateway) {
+            Gateway tis = (Gateway) this;
+            for (MoteProbe moteProbe : tis.getSubscribedMoteProbes()) {
+                moteProbe.trigger(tis, transmission.getContent().getSenderEUI());
+            }
+        }
     }
 
     /**
@@ -421,7 +439,7 @@ public abstract class NetworkEntity implements Serializable{
      * @param packet
      * @return
      */
-    public Boolean packetStrengthHighEnough(LoraTransmission packet){
+    public static Boolean packetStrengthHighEnough(LoraTransmission packet){
         if(packet.getTransmissionPower() > -174 - 10*Math.log10(packet.getBandwidth())-(2.5*packet.getSpreadingFactor()-10)){
             return true;
         }

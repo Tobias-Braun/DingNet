@@ -2,11 +2,17 @@ package IotDomain;
 
 import GUI.MainGUI;
 import SelfAdaptation.FeedbackLoop.GenericFeedbackLoop;
+import SelfAdaptation.qlearning.Action;
+import SelfAdaptation.qlearning.QLearningAdaption;
+import SelfAdaptation.qlearning.State;
 import be.kuleuven.cs.som.annotate.Basic;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -212,15 +218,29 @@ public class Simulation implements Runnable {
     public void run(){
 
         getEnvironment().reset();
-
         calculateIfMotesAreActiveBasedOnInputProfile();
 
+        FileWriter fileWriter = null;
+        try {
+            fileWriter = new FileWriter("max_values.csv");
+            fileWriter.write("state_in_path,x,y,sr,sf,tp,v,e");
+            fileWriter.write(System.lineSeparator());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        HashMap<State, Integer> stateMap = new HashMap<>();
+        int states_visited = 0;
+        for (Mote mote : getEnvironment().getMotes()) {
+            stateMap.put(new State(mote.getXPos() - mote.getXPos() % 4, mote.getYPos() - mote.getYPos() % 4), stateMap.size());
+        }
 
         for(int i =0; i< getInputProfile().getNumberOfRuns();i++) {
             getEnvironment().resetClock();
             gui.setProgress(i,getInputProfile().getNumberOfRuns());
-            if(i != 0)
+            if(i != 0) {
                 getEnvironment().addRun();
+                this.approach.incrementCurrentRun();
+            }
 
             Boolean arrived = true;
             HashMap<Mote, Integer> waypoinMap = new HashMap<>();
@@ -240,6 +260,9 @@ public class Simulation implements Runnable {
                                 if (Integer.signum(mote.getXPos() - getEnvironment().toMapXCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0 ||
                                         Integer.signum(mote.getYPos() - getEnvironment().toMapYCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0) {
                                     getEnvironment().moveMote(mote, mote.getPath().get(waypoinMap.get(mote)));
+                                    if (i == 0 && !stateMap.containsKey(new State(mote.getXPos(), mote.getYPos()))) {
+                                        stateMap.put(new State(mote.getXPos() - mote.getXPos() % 4, mote.getYPos() - mote.getYPos() % 4), stateMap.size());
+                                    }
                                     if (mote.shouldSend()) {
                                         LinkedList<Byte> data = new LinkedList<>();
                                         for (MoteSensor sensor : mote.getSensors()) {
@@ -276,9 +299,56 @@ public class Simulation implements Runnable {
                 mote.setXPos(location.getLeft());
                 mote.setYPos(location.getRight());
             }
-        }
 
+            writeMaxValues(i, fileWriter, stateMap);
+        }
     }
+
+    private void writeMaxValues(int i, FileWriter fileWriter, Map<State, Integer> stateMap) {
+        try {
+            if (approach instanceof QLearningAdaption) {
+                QLearningAdaption qLearning = (QLearningAdaption) approach;
+                qLearning.getStateList().sort((a,b) -> {
+                    return Integer.compare(stateMap.get(a), stateMap.get(b));
+                });
+                for (int state = 0; state < qLearning.getStateList().size(); state++) {
+                    State s = qLearning.getStateList().get(state);
+                    Action a = qLearning.chooseBestAction(s);
+                    try {
+                        fileWriter.write(String.valueOf(state));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(s.getPosX()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(s.getPosY()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(a.getSampling_rate()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(a.getSpreading_factor()));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(a.getTransmission_power()));
+                        fileWriter.write(",");
+                        float value = qLearning.getQTable().get(s).get(a);
+                        fileWriter.write(String.valueOf(value));
+                        fileWriter.write(",");
+                        fileWriter.write(String.valueOf(-Math.log(value)));
+                        fileWriter.write(System.lineSeparator());
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                };
+                fileWriter.flush();
+                System.out.println("approach received " + qLearning.getCompleteReward() + " reward");
+            }
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void addDataLineToLearningAlgorithm(String[] data, QLearningAdaption qlearning) {
+        qlearning.getQTable().get(new State(Integer.parseInt(data[0]), Integer.parseInt(data[1]))).put(new Action(Integer.parseInt(data[2]), Integer.parseInt(data[3]), Integer.parseInt(data[4])), Float.parseFloat(data[5]));
+    }
+
 
     /**
      *  Based on the Simulation information, calculates wether or not
