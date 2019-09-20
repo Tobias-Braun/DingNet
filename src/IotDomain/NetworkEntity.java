@@ -213,7 +213,7 @@ public abstract class NetworkEntity implements Serializable{
      * @param transmission The transmission to receiveTransmission.
      * @Effect if the package has a high enough transmission power, it is added using packetStrengthHighEnough().
      */
-    public void receiveTransmission(LoraTransmission transmission){
+    public synchronized void receiveTransmission(LoraTransmission transmission){
         if(packetStrengthHighEnough(transmission)){
             Boolean collision = false;
             for (LoraTransmission receivedTransmission: getAllReceivedTransmissions(getEnvironment().getNumberOfRuns()-1).keySet()) {
@@ -375,7 +375,7 @@ public abstract class NetworkEntity implements Serializable{
      * A method which sends a message to all gateways in the environment
      * @param message The message to send.
      */
-    protected void loraSend(LoraWanPacket message){
+    protected synchronized void loraSend(LoraWanPacket message){
         if(!isTransmitting) {
             LinkedList<LoraTransmission> packetsToSend = new LinkedList<>();
             powerSettingHistory.getLast().add(new Pair<>(getEnvironment().getTime().toSecondOfDay(),getTransmissionPower()));

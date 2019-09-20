@@ -151,7 +151,7 @@ public class Mote extends NetworkEntity {
      * @param data The data to send in the message
      * @param macCommands the MAC commands to include in the message.
      */
-    public void sendToGateWay(Byte[] data, HashMap<MacCommand,Byte[]> macCommands){
+    public synchronized void sendToGateWay(Byte[] data, HashMap<MacCommand,Byte[]> macCommands){
         Byte[] payload = new Byte[data.length+macCommands.size()];
         int i = 0;
         for(MacCommand key : macCommands.keySet()){
