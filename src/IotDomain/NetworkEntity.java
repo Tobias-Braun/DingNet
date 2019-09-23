@@ -233,13 +233,6 @@ public abstract class NetworkEntity implements Serializable{
                 handleMacCommands(transmission.getContent());
                 OnReceive(transmission.getContent().getPayload(), transmission.getContent().getSenderEUI(), transmission.getContent().getDesignatedReceiverEUI());
 
-            } else {
-                if (this instanceof Gateway) {
-                    Gateway tis = (Gateway) this;
-                    for (MoteProbe moteProbe : tis.getSubscribedMoteProbes()) {
-                        moteProbe.trigger(tis, transmission.getContent().getSenderEUI());
-                    }
-                }
             }
         }
         if (this instanceof Gateway) {

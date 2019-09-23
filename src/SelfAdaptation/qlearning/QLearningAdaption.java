@@ -13,7 +13,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 
 public class QLearningAdaption extends GenericFeedbackLoop {
@@ -22,7 +21,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
     private Pair<State, Action> lastStateActionPair;
     final HashMap<State, HashMap<Action, Float>> q_table;
-    private final ArrayList<State> state_list;
+    private final ArrayList<State> episodeList;
     private static final float alpha = 0.2f;
     private static final float gamma = 0f;
     private static final float epsilon = 0.15f;
@@ -32,7 +31,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     public QLearningAdaption() {
         super("Q-learning-Adaption");
         this.q_table = new HashMap<>();
-        this.state_list = new ArrayList<>();
+        this.episodeList = new ArrayList<>();
         this.rand = new Random();
     }
 
@@ -48,8 +47,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     @Override
     public void adapt(Mote mote, Gateway dataGateway) {
         State currentState = new State(mote.getXPos(), mote.getYPos());
-        boolean noneMatch = this.state_list.stream().noneMatch((state -> state.equals(currentState)));
-        if (noneMatch) this.state_list.add(currentState);
+        this.episodeList.add(currentState);
         float reward = calculateReward(mote, dataGateway);
         Action nextAction = chooseNextAction(currentState, mote.getEnvironment().getNumberOfRuns());
         Pair<State, Action> nextStateActionPair = new Pair<>(currentState, nextAction);
@@ -64,8 +62,8 @@ public class QLearningAdaption extends GenericFeedbackLoop {
         return this.q_table;
     }
 
-    public List<State> getStateList() {
-        return this.state_list;
+    public List<State> getEpisodeList() {
+        return this.episodeList;
     }
 
     public Action chooseNextAction(State currentState, int run) {
@@ -77,9 +75,9 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     public Action chooseRandomAction() {
-        final int transmission_power = -130;
-        final int spreading_factor = rand.nextInt(6) + 7; // 7 - 12
-        final int sampling_rate = 15;
+        final int transmission_power = -100;
+        final int spreading_factor = 12; // 7 - 12
+        final int sampling_rate = 10;
         return new Action(sampling_rate, spreading_factor, transmission_power);
     }
 
@@ -150,7 +148,8 @@ public class QLearningAdaption extends GenericFeedbackLoop {
         return this.complete_reward;
     }
 
-    public void resetReward() {
+    public void resetEpisode() {
         this.complete_reward = 0;
+        this.episodeList.clear();
     }
 }

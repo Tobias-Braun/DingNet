@@ -5,12 +5,12 @@ import pandas as ps
 import seaborn as sns
 
 sns.set()
-data = ps.read_csv('max_values-tp-and-sf.csv').to_numpy()
+data = ps.read_csv('max_values.csv').to_numpy()
 ep_ends = np.where(data[:,0] == 0)[0]
 index = 0
 show_tp = True
 show_sf = True
-show_sr = False
+show_sr = True
 # Create new Figure with black background
 fig = plt.figure(figsize=(8, 8))
 ax = None

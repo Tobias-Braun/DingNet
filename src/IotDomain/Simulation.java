@@ -228,11 +228,7 @@ public class Simulation implements Runnable {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        HashMap<State, Integer> stateMap = new HashMap<>();
         int states_visited = 0;
-        for (Mote mote : getEnvironment().getMotes()) {
-            stateMap.put(new State(mote.getXPos() - mote.getXPos() % 4, mote.getYPos() - mote.getYPos() % 4), stateMap.size());
-        }
 
         for(int i =0; i< getInputProfile().getNumberOfRuns();i++) {
             getEnvironment().resetClock();
@@ -260,9 +256,6 @@ public class Simulation implements Runnable {
                                 if (Integer.signum(mote.getXPos() - getEnvironment().toMapXCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0 ||
                                         Integer.signum(mote.getYPos() - getEnvironment().toMapYCoordinate(mote.getPath().get(waypoinMap.get(mote)))) != 0) {
                                     getEnvironment().moveMote(mote, mote.getPath().get(waypoinMap.get(mote)));
-                                    if (i == 0 && !stateMap.containsKey(new State(mote.getXPos(), mote.getYPos()))) {
-                                        stateMap.put(new State(mote.getXPos() - mote.getXPos() % 4, mote.getYPos() - mote.getYPos() % 4), stateMap.size());
-                                    }
                                     if (mote.shouldSend()) {
                                         LinkedList<Byte> data = new LinkedList<>();
                                         for (MoteSensor sensor : mote.getSensors()) {
@@ -299,20 +292,19 @@ public class Simulation implements Runnable {
                 mote.setXPos(location.getLeft());
                 mote.setYPos(location.getRight());
             }
-
-            writeMaxValues(i, fileWriter, stateMap);
+            writeMaxValues(i, fileWriter);
+            if (approach instanceof QLearningAdaption) {
+                ((QLearningAdaption) approach).resetEpisode();
+            }
         }
     }
 
-    private void writeMaxValues(int i, FileWriter fileWriter, Map<State, Integer> stateMap) {
+    private void writeMaxValues(int i, FileWriter fileWriter) {
         try {
             if (approach instanceof QLearningAdaption) {
                 QLearningAdaption qLearning = (QLearningAdaption) approach;
-                qLearning.getStateList().sort((a,b) -> {
-                    return Integer.compare(stateMap.get(a), stateMap.get(b));
-                });
-                for (int state = 0; state < qLearning.getStateList().size(); state++) {
-                    State s = qLearning.getStateList().get(state);
+                for (int state = 0; state < qLearning.getEpisodeList().size(); state++) {
+                    State s = qLearning.getEpisodeList().get(state);
                     Action a = qLearning.chooseBestAction(s);
                     try {
                         fileWriter.write(String.valueOf(state));

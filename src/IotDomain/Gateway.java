@@ -50,9 +50,6 @@ public class Gateway extends NetworkEntity {
     @Override
     protected void OnReceive(Byte[] packet, Long senderEUI, Long designatedReceiver) {
         getEnvironment().getMQTTServer().publish(new LinkedList<>(Arrays.asList(packet)), designatedReceiver, senderEUI,getEUI());
-        for (MoteProbe moteProbe : getSubscribedMoteProbes()){
-            moteProbe.trigger(this,senderEUI);
-        }
 
     }
 }
