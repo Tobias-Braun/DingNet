@@ -47,7 +47,7 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
     @Override
     public void adapt(Mote mote, Gateway dataGateway) {
-        State currentState = new State(mote.getXPos() - mote.getXPos() % 4, mote.getYPos() - mote.getYPos() % 4);
+        State currentState = new State(mote.getXPos(), mote.getYPos());
         boolean noneMatch = this.state_list.stream().noneMatch((state -> state.equals(currentState)));
         if (noneMatch) this.state_list.add(currentState);
         float reward = calculateReward(mote, dataGateway);
