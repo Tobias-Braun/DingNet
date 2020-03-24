@@ -11,6 +11,8 @@ import SelfAdaptation.FeedbackLoop.ReliableEfficientDistanceGateway;
 import SelfAdaptation.FeedbackLoop.SignalBasedAdaptation;
 import SelfAdaptation.Instrumentation.MoteEffector;
 import SelfAdaptation.Instrumentation.MoteProbe;
+import SelfAdaptation.common.RLAdaptation;
+import SelfAdaptation.ppo.PPOAdaptation;
 import SelfAdaptation.qlearning.QLearningAdaption;
 import org.jfree.chart.ChartFactory;
 import org.jfree.chart.ChartPanel;
@@ -164,6 +166,13 @@ public class MainGUI extends JFrame {
 
         GenericFeedbackLoop qLearningAdaption = new QLearningAdaption();
         algorithms.add(qLearningAdaption);
+
+        try {
+            GenericFeedbackLoop ppoAdaptation = new PPOAdaptation();
+            algorithms.add(ppoAdaptation);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         SignalBasedAdaptation signalBasedAdaptation = new SignalBasedAdaptation(QoS);
         algorithms.add(signalBasedAdaptation);
@@ -529,7 +538,7 @@ public class MainGUI extends JFrame {
                         selectedAlgorithm = algorithm;
                     }
                 }
-                simulation.setApproach(selectedAlgorithm);
+                simulation.setApproach((RLAdaptation) selectedAlgorithm);
             }
         });
         clearButton.addActionListener(new ActionListener() {

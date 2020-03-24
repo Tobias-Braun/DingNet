@@ -6,32 +6,34 @@ import IotDomain.Mote;
 import IotDomain.NetworkEntity;
 import IotDomain.Pair;
 import SelfAdaptation.FeedbackLoop.GenericFeedbackLoop;
+import SelfAdaptation.common.Action;
+import SelfAdaptation.common.RLAdaptation;
+import SelfAdaptation.common.State;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-public class QLearningAdaption extends GenericFeedbackLoop {
+public class QLearningAdaption extends GenericFeedbackLoop implements RLAdaptation {
 
     private static double state_action_space_square = 2560000;
 
     private Pair<State, Action> lastStateActionPair;
     final HashMap<State, HashMap<Action, Float>> q_table;
-    private final ArrayList<State> episodeList;
+    private final ArrayList<Pair<State,Action>> stateActionPairList;
     private static final float alpha = 0.2f;
     private static final float gamma = 0f;
-    private static final float epsilon = 0.15f;
     private final Random rand;
     private float complete_reward = 0;
+    private float last_reward = 0;
 
     public QLearningAdaption() {
         super("Q-learning-Adaption");
         this.q_table = new HashMap<>();
-        this.episodeList = new ArrayList<>();
+        this.stateActionPairList = new ArrayList<>();
         this.rand = new Random();
     }
 
@@ -47,24 +49,22 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     @Override
     public void adapt(Mote mote, Gateway dataGateway) {
         State currentState = new State(mote.getXPos(), mote.getYPos());
-        this.episodeList.add(currentState);
         float reward = calculateReward(mote, dataGateway);
         Action nextAction = chooseNextAction(currentState, mote.getEnvironment().getNumberOfRuns());
         Pair<State, Action> nextStateActionPair = new Pair<>(currentState, nextAction);
+        this.stateActionPairList.add(nextStateActionPair);
         updateQTable(nextStateActionPair, reward);
         this.lastStateActionPair = nextStateActionPair;
         getMoteEffector().setPower(mote, nextAction.getTransmission_power());
         getMoteEffector().setSpreadingFactor(mote, nextAction.getSpreading_factor());
         getMoteEffector().setSamplingRate(mote, nextAction.getSampling_rate());
+        this.reset = mote.getXPos() >= 2400;
     }
 
     public HashMap<State, HashMap<Action, Float>> getQTable() {
         return this.q_table;
     }
 
-    public List<State> getEpisodeList() {
-        return this.episodeList;
-    }
 
     public Action chooseNextAction(State currentState, int run) {
         if (rand.nextFloat() >= getEpsilon(run)) {
@@ -75,10 +75,10 @@ public class QLearningAdaption extends GenericFeedbackLoop {
     }
 
     public Action chooseRandomAction() {
-        final int transmission_power = -100;
-        final int spreading_factor = 12; // 7 - 12
-        final int sampling_rate = 10;
-        return new Action(sampling_rate, spreading_factor, transmission_power);
+        final int transmission_power = -159 + rand.nextInt(40);
+        final int spreading_factor = 7 + rand.nextInt(6); // 7 - 12
+        final int sampling_rate = 1 + rand.nextInt(15);
+        return new Action(transmission_power, spreading_factor, spreading_factor);
     }
 
     public Action chooseBestAction(State currentState) {
@@ -104,13 +104,14 @@ public class QLearningAdaption extends GenericFeedbackLoop {
 
         double reward;
         if (NetworkEntity.packetStrengthHighEnough(lastTransmission)) {
-            reward = 1 * Math.pow(Math.E, -used_energy(lastTransmission));
+            reward = (1d/this.lastStateActionPair.getRight().getSampling_rate()) * Math.pow(Math.E, -used_energy(lastTransmission));
         } else if (collision(gateway, lastTransmission)) {
             reward = 0;
         } else {
             reward = 0;
         }
         this.complete_reward += (float) reward;
+        this.last_reward = (float) reward;
         return (float) reward;
     }
 
@@ -144,12 +145,36 @@ public class QLearningAdaption extends GenericFeedbackLoop {
         );
     }
 
-    public float getCompleteReward() {
-        return this.complete_reward;
+    @Override
+    public State getLastState() {
+        return this.lastStateActionPair.getLeft();
     }
 
-    public void resetEpisode() {
+    @Override
+    public Action getLastAction() {
+        return this.lastStateActionPair.getRight();
+    }
+
+    @Override
+    public ArrayList<Pair<State, Action>> getStateActionPairList() {
+        return this.stateActionPairList;
+    }
+
+    @Override
+    public void reset() {
+        this.lastStateActionPair = null;
         this.complete_reward = 0;
-        this.episodeList.clear();
+        this.last_reward = 0;
+        this.stateActionPairList.clear();
+    }
+
+    @Override
+    public boolean shouldReset() {
+        return this.reset;
+    }
+
+    @Override
+    public float getEpisodeReward() {
+        return this.complete_reward;
     }
 }

@@ -1,4 +1,4 @@
-package SelfAdaptation.qlearning;
+package SelfAdaptation.common;
 
 import java.util.Objects;
 
@@ -13,7 +13,7 @@ public class Action {
         return transmission_power + ":" + spreading_factor + ":" + sampling_rate;
     }
 
-    public Action(int sampling_rate, int spreading_factor, int transmission_power) {
+    public Action(int transmission_power, int spreading_factor, int sampling_rate) {
         this.transmission_power = transmission_power;
         this.spreading_factor = spreading_factor;
         this.sampling_rate = sampling_rate;

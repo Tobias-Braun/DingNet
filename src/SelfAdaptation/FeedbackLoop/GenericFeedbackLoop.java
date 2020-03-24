@@ -2,6 +2,7 @@ package SelfAdaptation.FeedbackLoop;
 
 import IotDomain.Gateway;
 import IotDomain.Mote;
+import IotDomain.Simulation;
 import SelfAdaptation.Instrumentation.MoteEffector;
 import SelfAdaptation.Instrumentation.MoteProbe;
 import be.kuleuven.cs.som.annotate.Basic;
@@ -12,11 +13,23 @@ import be.kuleuven.cs.som.annotate.Model;
  */
 public abstract class GenericFeedbackLoop {
 
+    protected boolean reset;
+
+    public void setReset(boolean reset) {
+        this.reset = reset;
+    }
+
+    public boolean getReset() {
+        return reset;
+    }
+
     /**
      * A string representing the name of the approach.
      */
     @Model
     private String name;
+
+    private Simulation simulation;
 
     /**
      * The mote probe used by the feedback loop.
@@ -89,6 +102,14 @@ public abstract class GenericFeedbackLoop {
     @Basic
     public void setName(String name) {
         this.name = name;
+    }
+
+    public void setSimulation(Simulation simulation) {
+        this.simulation = simulation;
+    }
+
+    public Simulation getSimulation() {
+        return this.simulation;
     }
 
     /**

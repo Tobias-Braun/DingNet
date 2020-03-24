@@ -1,4 +1,4 @@
-package SelfAdaptation.qlearning;
+package SelfAdaptation.common;
 
 import java.util.Objects;
 
