@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="DingNet">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/DingNetExe/DingNet.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
