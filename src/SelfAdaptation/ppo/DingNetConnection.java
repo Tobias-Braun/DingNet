@@ -18,8 +18,8 @@ public class DingNetConnection {
     DingNetConnection() {
         try {
 
-            this.in = new RandomAccessFile("/Users/tobiasbraun/dingnet_in", "r");
-            this.out = new RandomAccessFile("/Users/tobiasbraun/dingnet_out", "rw");
+            this.in = new RandomAccessFile("/home/tobi/dingnet_in", "r");
+            this.out = new RandomAccessFile("/home/tobi/dingnet_out", "rw");
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
