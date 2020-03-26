@@ -1,7 +1,9 @@
 <component name="libraryTable">
   <library name="DingNet">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/DingNetExe/DingNet.jar!/" />
+      <root url="jar://$PROJECT_DIR$/out/production/DingNet/package-search-index.zip!/" />
+      <root url="jar://$PROJECT_DIR$/out/production/DingNet/member-search-index.zip!/" />
+      <root url="jar://$PROJECT_DIR$/out/production/DingNet/type-search-index.zip!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
